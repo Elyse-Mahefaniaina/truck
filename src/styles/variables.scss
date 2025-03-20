@@ -1,0 +1,19 @@
+// color palette
+$background: #FAFEFD;
+$interactive-component: #E0F8F3;
+$border-separator: #83CDC1;
+$borderfocus-rings: #53B9AB;
+$solid-background: #12A594;
+$secondary-text-links: #008573;
+$primary-text-color: #0D3D38;
+
+// layout
+@mixin flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+// border-radius
+$button-radius: 5px;
+$interactive-component-radius: 8px;
