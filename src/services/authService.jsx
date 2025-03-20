@@ -18,5 +18,10 @@ export const login = async (email, password) => {
   }
 };
 
+const isAuthenticated = () => {
+  //edit later
+  return !!sessionStorage.getItem('accessToken');
+};
+
 // eslint-disable-next-line import/no-anonymous-default-export
-export default {login};
+export default {login, isAuthenticated};
