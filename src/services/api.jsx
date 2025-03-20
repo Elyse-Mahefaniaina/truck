@@ -1,4 +1,5 @@
 import axios from "axios";
+import { Navigate } from "react-router-dom";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_BASE_URL,
@@ -30,24 +31,17 @@ api.interceptors.response.use(
 
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+      try {
+        const response = await axios.post("/auth/refresh-token");
+        const newAccessToken = response.data.accessToken;
+        sessionStorage.setItem("accessToken", newAccessToken);
 
-      const refreshToken = sessionStorage.getItem("refreshToken");
-      if (refreshToken) {
-        try {
-          const response = await axios.post("/auth/refresh-token", {
-            refreshToken,
-          });
-          const newAccessToken = response.data.accessToken;
-          sessionStorage.setItem("accessToken", newAccessToken);
-
-          originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
-          return api(originalRequest);
-        } catch (refreshError) {
-          sessionStorage.removeItem("accessToken");
-          sessionStorage.removeItem("refreshToken");
-          window.location.href = "/login";
-          return Promise.reject(refreshError);
-        }
+        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        sessionStorage.removeItem("accessToken");
+        Navigate("/login");
+        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);

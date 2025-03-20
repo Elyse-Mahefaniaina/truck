@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import authService from '../services/authService';
 import api from "../services/api";
+import { Navigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -24,15 +25,13 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     api.post("/auth/logout", {
       access: sessionStorage.getItem("accessToken"),
-      refresh: sessionStorage.getItem("refreshToken"),
     }, {
       headers: {
         "Content-Type": "application/json"
       }
-    }).then((response) => {
+    }).then(() => {
       sessionStorage.removeItem('accessToken');
-      sessionStorage.removeItem('refreshToken');
-      window.location.href = "/login";
+      Navigate("/home")
     }).catch((error) => {
       alert(error);
     });
