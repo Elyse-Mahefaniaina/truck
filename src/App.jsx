@@ -1,11 +1,12 @@
 import React from 'react';
 import Login from './pages/login/Login';
+import TripConfiguration from './pages/trip-configuration/TripConfiguration';
 
 import './App.scss';
 
 function App() {
   return (
-    <Login />
+    <TripConfiguration />
   );
 }
 

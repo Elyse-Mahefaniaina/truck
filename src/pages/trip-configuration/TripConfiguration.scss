@@ -1,0 +1,39 @@
+@use "../../styles/variables.scss" as *;
+
+.trip-configuration-container {
+    width: 100vw;
+    max-width: 100vw;
+    overflow-x: hidden;
+    min-height: 100vh;  
+    background-color: $background;
+    
+    .nav-container {
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
+    }
+
+    .trip-configuration-content {
+        width: 100%;
+        @include flex-center;
+        flex-direction: column;
+        margin-top: 2rem;
+        @include padding-left-right;
+
+        .map-point-marker {
+            @include flex-center;
+            gap: 1rem;
+
+            & > div {
+                @include flex-center;
+                background-color: $solid-background;
+                color: $background;
+                padding: 0.4rem .8rem;
+                border-radius: $button-radius;
+                border: 2px solid transparent;
+            }
+
+            .fill {
+                border: 2px solid $secondary-text-links;
+            }
+        }
+    }
+}
