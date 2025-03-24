@@ -29,11 +29,20 @@
                 padding: 0.4rem .8rem;
                 border-radius: $button-radius;
                 border: 2px solid transparent;
+                cursor: pointer;
             }
 
             .fill {
                 border: 2px solid $secondary-text-links;
+                color: $secondary-text-links;
+                
             }
+        }
+
+        .map {
+            margin-top: 1rem;
+            width: 100%;
+            height: 30rem;
         }
     }
 }
