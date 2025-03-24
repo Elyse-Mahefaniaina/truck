@@ -4,37 +4,54 @@ import "leaflet-routing-machine";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import { useMap } from "react-leaflet";
 
-const LeafletRoutingMachine = ({ isPickup }) => {
+const LeafletRoutingMachine = ({ type }) => {
   const map = useMap();
+  const [current, setCurrent] = useState([null, null]);
   const [pickup, setPickup] = useState([null, null]);
   const [dropoff, setDropoff] = useState([null, null]);
+  const [currentMarker, setCurrentMarker] = useState(null)
   const [pickupMarker, setPickupMarker] = useState(null);
   const [dropoffMarker, setDropoffMarker] = useState(null);
   const [routeData, setRouteData] = useState({ distance: 0, duration: 0, coordinates: [] });
   const [routingControl, setRoutingControl] = useState(null);
 
   useEffect(() => {
-    const onMapClick = (e) => {
-      if (isPickup) {
-        if (pickupMarker) {
-          map.removeLayer(pickupMarker);
-        }
-        const newMarker = L.marker([e.latlng.lat, e.latlng.lng])
-          .addTo(map)
-          .bindTooltip("Pickup", { permanent: true, direction: "top" });
-        setPickup([e.latlng.lat, e.latlng.lng]);
-        setPickupMarker(newMarker);
-      } else {
-        if (dropoffMarker) {
-          map.removeLayer(dropoffMarker);
-        }
+    const markerTypes = {
+      current: {
+        stateSetter: setCurrent,
+        markerSetter: setCurrentMarker,
+        marker: currentMarker,
+        label: "Current",
+      },
+      pickup: {
+        stateSetter: setPickup,
+        markerSetter: setPickupMarker,
+        marker: pickupMarker,
+        label: "Pickup",
+      },
+      dropoff: {
+        stateSetter: setDropoff,
+        markerSetter: setDropoffMarker,
+        marker: dropoffMarker,
+        label: "Dropoff",
+      },
+    };
   
-        const newMarker = L.marker([e.latlng.lat, e.latlng.lng])
-          .addTo(map)
-          .bindTooltip("Dropoff", { permanent: true, direction: "top" });
-        setDropoff([e.latlng.lat, e.latlng.lng]);
-        setDropoffMarker(newMarker);
+    const onMapClick = (e) => {
+      if (!markerTypes[type]) return;
+  
+      const { stateSetter, markerSetter, marker, label } = markerTypes[type];
+  
+      if (marker) {
+        map.removeLayer(marker);
       }
+  
+      const newMarker = L.marker([e.latlng.lat, e.latlng.lng])
+        .addTo(map)
+        .bindTooltip(label, { permanent: true, direction: "top" });
+  
+      stateSetter([e.latlng.lat, e.latlng.lng]);
+      markerSetter(newMarker);
     };
   
     map.on("click", onMapClick);
@@ -42,16 +59,18 @@ const LeafletRoutingMachine = ({ isPickup }) => {
     return () => {
       map.off("click", onMapClick);
     };
-  }, [isPickup, map, pickupMarker, dropoffMarker]);
+
+  }, [type, map, currentMarker, pickupMarker, dropoffMarker]);
+  
 
   useEffect(() => {
-    if (pickup[0] !== null && dropoff[0] !== null) {
+    if (current[0] !== null &&pickup[0] !== null && dropoff[0] !== null) {
       if (routingControl) {
         map.removeControl(routingControl);
       }
 
       const newRoutingControl = L.Routing.control({
-        waypoints: [L.latLng(pickup[0], pickup[1]), L.latLng(dropoff[0], dropoff[1])],
+        waypoints: [L.latLng(current[0], current[1]), L.latLng(pickup[0], pickup[1]), L.latLng(dropoff[0], dropoff[1])],
         lineOptions: {
           styles: [{ color: "blue", weight: 5, opacity: 0.7 }],
         },
@@ -82,7 +101,7 @@ const LeafletRoutingMachine = ({ isPickup }) => {
 
       setRoutingControl(newRoutingControl);
     }
-  }, [pickup, dropoff]);
+  }, [current, pickup, dropoff]);
 
   return null;
   
@@ -91,9 +110,10 @@ const LeafletRoutingMachine = ({ isPickup }) => {
 let DefaultIcon = L.icon({
   iconUrl: "/marker-icon.png",
   iconSize: [20, 20],
-  iconAnchor: [0, 0],
+  iconAnchor: [2, 0],
   popupAnchor: [2, -40],
 });
+
 L.Marker.prototype.options.icon = DefaultIcon;
 
 export default LeafletRoutingMachine;

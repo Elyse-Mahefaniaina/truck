@@ -10,24 +10,24 @@ import LeafletRoutingMachine from "../../components/leaflet-routing-machine/Leaf
 import "./TripConfiguration.scss";
 
 const TripConfiguration = () => {
-    const [isPickup, setPickup] = useState(true);
+    const [type, setType] = useState("current");
 
     const handleClick = (type) => {
-        setPickup(type === "pickup");
-    };
+        setType(type);
+    }
     
     return (
         <div className="trip-configuration-container">
             <Nav />
             <div className="trip-configuration-content">
                 <div className="map-point-marker">
-                    <div className="action" onClick={() => handleClick("current")}>
-                        <MapPin /> current position
+                    <div className={`action ${type === "current" ? "fill": ""}`} onClick={() => handleClick("current")}>
+                        <MapPin /> Current
                     </div>
-                    <div className={`action ${isPickup ? "fill" : ""}`} onClick={() => handleClick("pickup")}>
+                    <div className={`action ${type === "pickup" ? "fill" : ""}`} onClick={() => handleClick("pickup")}>
                         <MapPin /> Pick-up
                     </div>
-                    <div className={`action ${!isPickup ? "fill" : ""}`}  onClick={() => handleClick("dropoff")}>
+                    <div className={`action ${type === "dropoff" ? "fill" : ""}`}  onClick={() => handleClick("dropoff")}>
                         <MapPin /> Dropoff
                     </div>
                 </div>
@@ -41,7 +41,7 @@ const TripConfiguration = () => {
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
-                        <LeafletRoutingMachine isPickup={isPickup}/>
+                        <LeafletRoutingMachine type={type}/>
                     </MapContainer>
                 </div>
             </div>
