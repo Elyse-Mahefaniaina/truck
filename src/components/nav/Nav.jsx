@@ -1,10 +1,14 @@
 import React from 'react';
 import { Menu } from "lucide-react";
 import { menuItems } from "./NavMenuItem";
+import{ useAuth } from "../../hooks/useAuth"
 
 import './Nav.scss';
 
 const Nav = () => {
+
+    const { logout } = useAuth();
+
     return (
         <div className="nav-container">
             <div className="nav-content">
@@ -21,9 +25,8 @@ const Nav = () => {
                 </div>
 
                 <div className="user-action">
-                    <div className="signin">
+                    <div className="signin" onClick={logout}>
                         Sign out
-                        
                     </div>
                 </div>
                 <div className="burguer-menu">

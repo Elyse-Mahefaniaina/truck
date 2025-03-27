@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import{ useAuth } from "../../hooks/useAuth"
 import { User, Key } from "lucide-react";
 
@@ -12,10 +12,6 @@ const Login = () => {
     const submitForm = async () => {
         await login(email, password);
     }
-
-    useEffect(() => {
-        console.log("error",error);
-    }, [error]);
 
     return (
         <div className="login-container">

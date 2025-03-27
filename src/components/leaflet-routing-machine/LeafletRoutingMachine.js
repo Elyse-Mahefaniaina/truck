@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet-routing-machine";
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import { useMap } from "react-leaflet";
+import api from "../../services/api";
 
 const LeafletRoutingMachine = ({ type }) => {
   const map = useMap();
@@ -14,6 +15,17 @@ const LeafletRoutingMachine = ({ type }) => {
   const [dropoffMarker, setDropoffMarker] = useState(null);
   const [routeData, setRouteData] = useState({ distance: 0, duration: 0, coordinates: [] });
   const [routingControl, setRoutingControl] = useState(null);
+
+  const [distLastRefuel, setDistLastRefuel] = useState(0);
+
+  useEffect(() => {
+    api.post("/api/trip")
+    .then((response) => {
+      setDistLastRefuel(response.data)
+    }).catch ((error) => {
+      console.log(error);
+    });
+  }, [])
 
   useEffect(() => {
     const markerTypes = {
@@ -64,7 +76,7 @@ const LeafletRoutingMachine = ({ type }) => {
   
 
   useEffect(() => {
-    if (current[0] !== null &&pickup[0] !== null && dropoff[0] !== null) {
+    if (current[0] !== null && pickup[0] !== null && dropoff[0] !== null) {
       if (routingControl) {
         map.removeControl(routingControl);
       }
@@ -94,9 +106,6 @@ const LeafletRoutingMachine = ({ type }) => {
         const duration = route.summary.totalTime;
         
         setRouteData({ distance, duration, coordinates });
-        console.log(distance, duration);
-        
-
       });
 
       setRoutingControl(newRoutingControl);
