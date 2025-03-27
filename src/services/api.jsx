@@ -1,5 +1,4 @@
 import axios from "axios";
-import { Navigate } from "react-router-dom";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_BASE_URL,
@@ -40,7 +39,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         sessionStorage.removeItem("accessToken");
-        Navigate("/login");
+        window.location.href = "/login";
         return Promise.reject(refreshError);
       }
     }

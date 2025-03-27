@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import authService from '../services/authService';
 import api from "../services/api";
-import { Navigate } from 'react-router-dom';
 
 const AuthContext = createContext();
 
@@ -31,7 +30,7 @@ export const AuthProvider = ({ children }) => {
       }
     }).then(() => {
       sessionStorage.removeItem('accessToken');
-      Navigate("/home")
+      window.location.href = "/login"
     }).catch((error) => {
       alert(error);
     });

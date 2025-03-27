@@ -110,7 +110,7 @@ const LeafletRoutingMachine = ({ type }) => {
 let DefaultIcon = L.icon({
   iconUrl: "/marker-icon.png",
   iconSize: [20, 20],
-  iconAnchor: [2, 0],
+  iconAnchor: [0, 0],
   popupAnchor: [2, -40],
 });
 

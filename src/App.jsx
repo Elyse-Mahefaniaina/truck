@@ -1,4 +1,6 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'; 
+import { AuthProvider } from './contexts/AuthContext';
 import Login from './pages/login/Login';
 import TripConfiguration from './pages/trip-configuration/TripConfiguration';
 
@@ -6,7 +8,15 @@ import './App.scss';
 
 function App() {
   return (
-    <TripConfiguration />
+    <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Navigate to={"/login"}/>} />
+            <Route path="/trip" element={<TripConfiguration />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
   );
 }
 
