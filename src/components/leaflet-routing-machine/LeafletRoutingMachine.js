@@ -15,13 +15,42 @@ const LeafletRoutingMachine = ({ type }) => {
   const [dropoffMarker, setDropoffMarker] = useState(null);
   const [routeData, setRouteData] = useState({ distance: 0, duration: 0, coordinates: [] });
   const [routingControl, setRoutingControl] = useState(null);
+  const [remainingFuelDistance, setRemainingFuelDistancel] = useState(0);
+  const [isGasStationFind, setGasStationFind] = useState(false);
 
-  const [distLastRefuel, setDistLastRefuel] = useState(0);
+  const getGasStations = async (lat, lng, radius = 1000) => {
+    const query = `
+      [out:json];
+      (
+        node["amenity"="fuel"](around:${radius},${lat},${lng});
+        way["amenity"="fuel"](around:${radius},${lat},${lng});
+        relation["amenity"="fuel"](around:${radius},${lat},${lng});
+      );
+      out body;
+    `;
+    
+    const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+  
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      return data.elements.map(element => ({
+        lat: element.lat,
+        lng: element.lon,
+        name: element.tags.name || "Unnamed Station"
+      }));
+    } catch (error) {
+      console.error("Error fetching gas stations:", error);
+      return [];
+    }
+  };
+  
+  
 
   useEffect(() => {
     api.post("/api/trip")
     .then((response) => {
-      setDistLastRefuel(response.data)
+      setRemainingFuelDistancel(1000 - response.data.distance)
     }).catch ((error) => {
       console.log(error);
     });
@@ -99,13 +128,67 @@ const LeafletRoutingMachine = ({ type }) => {
         showAlternatives: false,
       }).addTo(map);
 
-      newRoutingControl.on("routeselected", function (e) {
+      newRoutingControl.on("routeselected", async function (e) {
         const route = e.route;
         const distance = route.summary.totalDistance;
         const coordinates = route.coordinates.map(coord => [coord.lat, coord.lng]);
         const duration = route.summary.totalTime;
         
         setRouteData({ distance, duration, coordinates });
+        const distanceToFind = remainingFuelDistance * 1000;
+        
+        let accumulatedDistance = 0;
+        let markerPosition = null;
+
+        for (let i = 1; i < coordinates.length; i++) {
+          const [lat1, lng1] = coordinates[i - 1];
+          const [lat2, lng2] = coordinates[i];
+          const segmentDistance = map.distance([lat1, lng1], [lat2, lng2]);
+
+          accumulatedDistance += segmentDistance;
+
+          if (accumulatedDistance >= distanceToFind && !isGasStationFind) {
+            const ratio = (accumulatedDistance - distanceToFind) / segmentDistance;
+            const lat = lat2 - ratio * (lat2 - lat1);
+            const lng = lng2 - ratio * (lng2 - lng1);
+            markerPosition = [lat, lng];
+            break;
+          }
+        }
+
+        if (markerPosition && !isGasStationFind) {  
+          const gasStations = await getGasStations(markerPosition[0], markerPosition[1], 10000);
+  
+          let closestStation = null;
+          let closestDistance = Infinity;
+
+          gasStations.forEach(station => {
+            try {
+              const stationPosition = [station.lat, station.lng];
+              const distanceToStation = map.distance(markerPosition, stationPosition);
+
+              if (distanceToStation < closestDistance) {
+                closestDistance = distanceToStation;
+                closestStation = station;
+              }
+            } catch (error) {
+              // ignored
+            }
+          });
+
+          if (closestStation) {
+            const { lat, lng, name } = closestStation;
+            if (!route.waypoints.some(waypoint => waypoint.lat === lat && waypoint.lng === lng) && !isGasStationFind) {
+              newRoutingControl.spliceWaypoints(1, 0, L.latLng(lat, lng));
+              L.marker([lat, lng])
+              .addTo(map)
+              .bindPopup(`refueling - ${name}`, { permanent: true, direction: "top" });
+
+              setGasStationFind(true)
+            }
+          }
+
+        }
       });
 
       setRoutingControl(newRoutingControl);
