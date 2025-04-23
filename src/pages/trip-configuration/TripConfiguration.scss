@@ -47,4 +47,10 @@
             height: 30rem;
         }
     }
+
+    .log-trip-config {
+        margin-top: 2rem;
+        @include flex-center;
+        width: 100%;
+    }
 }

@@ -1,22 +1,63 @@
-import React, { useEffect } from "react";
+import React from "react";
 
 import "./Log.scss";
 
 const Eld = () => {
-
-    const getDataDriving = () => {
+    const getData = () => {
         const data = JSON.parse(localStorage.getItem("data")).waypoints;
+        
+        let onduty = [];
+        let offDuty = [];
+        let sleeper = [];
+        let driving = [];
+        
 
-        let last_point = data[0]; 
-        for (let i = 1; i < data.length; i++) {
-            
+        let accumulated_duration = 0;
+        let begin_drive = null;
+        let end_drive = null;
+        for(let i=0; i < data.length; i++) {
+            const type = data[i].type.includes("/") ? data[i].type.split("/")[0] : data[i].type;
+
+            accumulated_duration += (data[i].duration_from_last_point) + (data[i-1]?.duration[0] ?? 0);
+            if(accumulated_duration >= 24 * 3600) break;
+
+            const left = ((accumulated_duration * 2.7) / 3600);
+            const end = ((accumulated_duration + data[i].duration[0]) * 2.7) / 3600;
+            const width = (((data[i].duration[0]) * 2.7) / 3600);
+
+            if(type === "on-duty") {
+                onduty.push({left: `${left}rem`, width: `2px`, height: '2.7rem', bottom: '46%'});
+                onduty.push({bottom: '46%', left: `${left}rem`, height:"4.5px", width: `${width + 0.15}rem`});
+                onduty.push({left: `${end}rem`, width: `2px`, height: '2.7rem', bottom: '46%'});
+            }
+            if(type === "off-duty") {
+                offDuty.push({left: `${left}rem`, width: `4.5px`, height: '5.6rem'});
+                offDuty.push({left: `${left}rem`, width: `${width + 0.15}rem` , height: "4.5px"});
+                offDuty.push({left: `${end}rem`, width: `2px`, height: '5.6rem'});
+            }
+            if(type === "sleeper") {
+                sleeper.push({left: `${left}rem`, width: `2px`, height: '2.9rem'});
+                sleeper.push({left: `${left}rem`, width: `${width + 0.15}rem`, height: "4.5px"});
+                sleeper.push({left: `${end}rem`, width: `2px`, height: '2.9rem'});
+            }
+
+            let left_d, widht_d = null;
+            if(begin_drive === null) {
+                begin_drive = accumulated_duration + data[i].duration[0];
+
+            } else {
+                end_drive = accumulated_duration;
+                left_d = ((begin_drive * 2.7) / 3600);
+                widht_d = (((end_drive - begin_drive) * 2.7) / 3600);
+
+                driving.push({left: `${left_d}rem`, width: `${widht_d + 0.16}rem`, height: '4.5px'});
+                begin_drive = end_drive + data[i].duration[0];
+                end_drive = null;
+            }
         }
+        
+        return {on: onduty, off: offDuty, s: sleeper, d: driving};
     }
-
-    useEffect(() => {
-        console.log(JSON.parse(localStorage.getItem("data")));
-    }, [])
-
     return (
         <div className="log-container">
             <div className="header">
@@ -115,6 +156,16 @@ const Eld = () => {
                     <div className="line-content">
                         <div className="label">1. Off Duty</div>
                         <div className="body">
+                        <div className="line">
+                        {getData().off.map((data, i) => (
+                            <div 
+                                key={i}
+                                className="line-part-data"
+                                style={data}
+                                data={data}
+                            ></div>
+                        ))}
+                        </div>
                         {Array.from({ length: 24 }, (_, i) => (
                             <div className="hour" key={i}>
                                 <div className="quarter1"></div>
@@ -128,6 +179,15 @@ const Eld = () => {
                     <div className="line-content">
                         <div className="label">2. Sleeper Berth</div>
                         <div className="body">
+                        <div className="line">
+                        {getData().s.map((data, i) => (
+                            <div 
+                                key={i}
+                                className="line-part-data"
+                                style={data}
+                            ></div>
+                        ))}
+                        </div>
                         {Array.from({ length: 24 }, (_, i) => (
                             <div className="hour" key={i}>
                                 <div className="quarter1"></div>
@@ -141,6 +201,15 @@ const Eld = () => {
                     <div className="line-content">
                         <div className="label">3. Driving</div>
                         <div className="body">
+                        <div className="line">
+                        {getData().d.map((data, i) => (
+                            <div 
+                                key={i}
+                                className="line-part-data"
+                                style={data}
+                            ></div>
+                        ))}
+                        </div>
                         {Array.from({ length: 24 }, (_, i) => (
                             <div className="hour" key={i}>
                                 <div className="quarter1"></div>
@@ -154,6 +223,15 @@ const Eld = () => {
                     <div className="line-content">
                         <div className="label">4. On Duty</div>
                         <div className="body">
+                        <div className="line">
+                        {getData().on.map((data, i) => (
+                            <div 
+                                key={i}
+                                className="line-part-data"
+                                style={data}
+                            ></div>
+                        ))}
+                        </div>
                         {Array.from({ length: 24 }, (_, i) => (
                             <div className="hour" key={i}>
                                 <div className="quarter1"></div>

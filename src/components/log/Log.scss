@@ -217,6 +217,18 @@ input {
                     display: flex;
                     align-items: center;
                     justify-content: flex-start;
+                    
+
+                    .line {
+                        position: relative;
+
+                        .line-part-data {
+                            position: absolute;
+                            background-color: black;
+                            border-radius: 2px;
+                        }
+                    }
+
                     .hour {
                         width: 2.7rem;
                         aspect-ratio: 1;
@@ -224,7 +236,6 @@ input {
                         border: .5px solid black;
     
                         .quarter1, .quarter2, .mid {
-                            content: '';
                             position: absolute;
                             width: .5px;
                             top: 0;

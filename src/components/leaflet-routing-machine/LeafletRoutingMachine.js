@@ -6,7 +6,7 @@ import { useMap } from "react-leaflet";
 import api from "../../services/api";
 import "./RouteMachineLoader.css";
 
-const LeafletRoutingMachine = ({ type }) => {
+const LeafletRoutingMachine = ({ type, setData }) => {
   const map = useMap();
   const [current, setCurrent] = useState([null, null]);
   const [pickup, setPickup] = useState([null, null]);
@@ -72,7 +72,31 @@ const LeafletRoutingMachine = ({ type }) => {
 
   }, [type, map, currentMarker, pickupMarker, dropoffMarker]);
   
+  const splitDataPer24Hours = (data) => {
+    let dataResult = [];
+    let data_temp = [];
+    let accumulated_duration = 0;
+    
+    for(let i= 0; i < data.length; i++) {
+      accumulated_duration += (data[i].duration_from_last_point) + (data[i-1]?.duration[0] ?? 0);
+      
+      if(accumulated_duration > (24 * 3600)) {
+        const accumulated_duration_temp = (accumulated_duration - ((data[i].duration_from_last_point) + (data[i-1]?.duration[0] ?? 0)))
+        if((accumulated_duration_temp + (data[i-1]?.duration[0] ?? 0)) > (24 * 3600) ) {
+          let data_int = data[i-1];
+          data_int.duration[0] = (24 - accumulated_duration_temp); 
+          data_temp.push(data_int); 
 
+          const newDuration = data[i - 1]?.duration[0] ?? 0 - (24 - accumulated_duration_temp)
+        }
+        data_temp.push(data[i]);
+        accumulated_duration = 0;
+      }
+      data_temp.push(data[i])
+
+    }
+
+  };
   // useEffect(() => {
   //   if (current[0] !== null && pickup[0] !== null && dropoff[0] !== null) {
   //     initMarker();

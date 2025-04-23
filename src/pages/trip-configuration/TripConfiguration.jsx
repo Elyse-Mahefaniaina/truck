@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Nav from "../../components/nav/Nav";
+import Log from "../../components/log/Log";
 import { MapPin } from "lucide-react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet-control-geocoder/dist/Control.Geocoder.css";
@@ -11,6 +12,7 @@ import "./TripConfiguration.scss";
 
 const TripConfiguration = () => {
     const [type, setType] = useState("current");
+    const [dataLogs, setDataLogs] = useState([]);
 
     const handleClick = (type) => {
         setType(type);
@@ -44,6 +46,13 @@ const TripConfiguration = () => {
                         <LeafletRoutingMachine type={type}/>
                     </MapContainer>
                 </div>
+            </div>
+            <div className="log-trip-config">
+                {dataLogs.map((data, index) => {
+                    return(
+                        <Log key={index} data={data}/>
+                    );
+                })}
             </div>
         </div>
     );
