@@ -32,7 +32,7 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const response = await axios.post("/auth/refresh-token");
+        const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/auth/refresh-token`, {}, { withCredentials: true });
         const newAccessToken = response.data.accessToken;
         sessionStorage.setItem("accessToken", newAccessToken);
 

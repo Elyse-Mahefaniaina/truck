@@ -1,16 +1,34 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from 'axios';
 
 import "./Log.scss";
 
-const Eld = () => {
+const Eld = ({dataLogs, startDate, addDay}) => {
+    const [day, setDay] = useState("");
+    const [month, setMonth] = useState("");
+    const [year, setYears] = useState("");
+    const [name] = useState(() => sessionStorage.getItem("userName"));
+    const [locations, setLocations] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (startDate) {
+            let parts = new Date(startDate);
+            parts.setDate(parts.getDate() + Number(addDay))
+            if (parts) {
+                setYears(parts.getFullYear());
+                setMonth((parts.getMonth() + 1));
+                setDay(parts.getDate());
+            }
+        }
+    }, [addDay, startDate]);
+     
     const getData = () => {
-        const data = JSON.parse(localStorage.getItem("data")).waypoints;
-        
+        const data = dataLogs;
         let onduty = [];
         let offDuty = [];
         let sleeper = [];
         let driving = [];
-        
 
         let accumulated_duration = 0;
         let begin_drive = null;
@@ -19,26 +37,31 @@ const Eld = () => {
             const type = data[i].type.includes("/") ? data[i].type.split("/")[0] : data[i].type;
 
             accumulated_duration += (data[i].duration_from_last_point) + (data[i-1]?.duration[0] ?? 0);
-            if(accumulated_duration >= 24 * 3600) break;
 
             const left = ((accumulated_duration * 2.7) / 3600);
             const end = ((accumulated_duration + data[i].duration[0]) * 2.7) / 3600;
             const width = (((data[i].duration[0]) * 2.7) / 3600);
-
+            
             if(type === "on-duty") {
-                onduty.push({left: `${left}rem`, width: `2px`, height: '2.7rem', bottom: '46%'});
+                onduty.push({left: `${left}rem`, width: `3px`, height: '2.7rem', bottom: '46%'});
+                onduty.push({left: `${left}rem`, width: `3px`, height: '9rem'});
+                onduty.push({text: `${data[i].label}`, left: `${(left - 2.6)}rem`, width: `7rem`, height: '1.5rem', top: '9rem', background: 'none', transform: 'rotate(90deg)'});
                 onduty.push({bottom: '46%', left: `${left}rem`, height:"4.5px", width: `${width + 0.15}rem`});
-                onduty.push({left: `${end}rem`, width: `2px`, height: '2.7rem', bottom: '46%'});
+                onduty.push({left: `${end}rem`, width: `3px`, height: '2.7rem', bottom: '46%'});
             }
             if(type === "off-duty") {
-                offDuty.push({left: `${left}rem`, width: `4.5px`, height: '5.6rem'});
+                offDuty.push({left: `${left}rem`, width: `3px`, height: '5.6rem'});
+                offDuty.push({left: `${left}rem`, width: `3px`, height: '17rem'});
+                offDuty.push({text: `${data[i].label}`, left: `${(left - 2.6)}rem`, width: `7rem`, height: '1.5rem', top: '17rem', background: 'none', transform: 'rotate(90deg)'});
                 offDuty.push({left: `${left}rem`, width: `${width + 0.15}rem` , height: "4.5px"});
-                offDuty.push({left: `${end}rem`, width: `2px`, height: '5.6rem'});
+                offDuty.push({left: `${end}rem`, width: `3px`, height: '5.6rem'});
             }
             if(type === "sleeper") {
-                sleeper.push({left: `${left}rem`, width: `2px`, height: '2.9rem'});
+                sleeper.push({left: `${left}rem`, width: `3px`, height: '2.9rem'});
+                sleeper.push({left: `${left}rem`, width: `3px`, height: '14rem'});
+                sleeper.push({text: `${data[i].label}`, left: `${(left - 2.6)}rem`, width: `7rem`, height: '1.5rem', top: '14rem', background: 'none', transform: 'rotate(90deg)'});
                 sleeper.push({left: `${left}rem`, width: `${width + 0.15}rem`, height: "4.5px"});
-                sleeper.push({left: `${end}rem`, width: `2px`, height: '2.9rem'});
+                sleeper.push({left: `${end}rem`, width: `3px`, height: '2.9rem'});
             }
 
             let left_d, widht_d = null;
@@ -58,6 +81,84 @@ const Eld = () => {
         
         return {on: onduty, off: offDuty, s: sleeper, d: driving};
     }
+
+    const getTotalHours = () => {
+        const data = dataLogs;
+        let accumulated_duration = 0;
+        let begin_drive = null;
+        let end_drive = null;
+
+        let offDuty = 0;
+        let onDuty = 0;
+        let sleeper = 0;
+        let driving = 0;
+
+        for(let i=0; i < data.length; i++) {
+            const type = data[i].type.includes("/") ? data[i].type.split("/")[0] : data[i].type;
+            accumulated_duration += (data[i].duration_from_last_point) + (data[i-1]?.duration[0] ?? 0);
+            
+            if(type === "on-duty") {
+                onDuty += data[i].duration[0];
+            }
+            if(type === "off-duty") {
+                offDuty += data[i].duration[0];
+            }
+            if(type === "sleeper") {
+                sleeper += data[i].duration[0];
+            }
+
+            if(begin_drive === null) {
+                begin_drive = accumulated_duration + data[i].duration[0];
+
+            } else {
+                end_drive = accumulated_duration;
+                driving += (end_drive - begin_drive);
+                begin_drive = end_drive + data[i].duration[0];
+                end_drive = null;
+            }
+        }
+
+        return {on: onDuty, off: offDuty, s: sleeper, d: driving};
+    }
+
+    const getLocationName = async (lat, lon) => {
+        try {
+          const response = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+            params: {
+              lat,
+              lon,
+              format: 'json',
+            },
+            headers: {
+              'Accept-Language': 'en'
+            }
+          });
+          const address = response.data.address;
+          return `${address.city || ""}, ${address.suburb || ""}, ${address.road || ""}`;
+        } catch (error) {
+          console.error("Erreur lors de la géolocalisation inversée :", error);
+          return "Unknown location";
+        }
+    };
+
+    useEffect(() => {
+        const getLocationNameData = async () => {
+            const pickupData = dataLogs.find(data => data.label === "pickup") || dataLogs[0];
+            const dropoffData = dataLogs.find(data => data.label === "dropoff") || dataLogs[dataLogs.length - 1];
+    
+            const [pickupName, dropoffName] = await Promise.all([
+                pickupData ? getLocationName(pickupData.lat, pickupData.lng) : null,
+                dropoffData ? getLocationName(dropoffData.lat, dropoffData.lng) : null,
+            ]);
+    
+            setLocations([pickupName, dropoffName]);
+            setLoading(false);
+        };
+    
+        getLocationNameData();
+    }, [dataLogs]);
+    
+
     return (
         <div className="log-container">
             <div className="header">
@@ -67,15 +168,15 @@ const Eld = () => {
                 </div>
                 <div className="date-container">
                     <div className="date-part-container">
-                        <div className="input"><input type="text" /></div>
+                        <div className="input"><input type="text" defaultValue={month}/></div>
                         <div className="label">(month)</div>
                     </div>
                     <div className="date-part-container">
-                        <div className="input"><input type="text" /></div>
+                        <div className="input"><input type="text" defaultValue={day}/></div>
                         <div className="label">(day)</div>
                     </div>
                     <div className="date-part-container">
-                        <div className="input"><input type="text" /></div>
+                        <div className="input"><input type="text" defaultValue={year}/></div>
                         <div className="label">(years)</div>
                     </div>
                 </div>
@@ -87,11 +188,23 @@ const Eld = () => {
             <div className="pickup-dropoff-container">
                 <div className="location-container">
                     <div className="label">From:</div>
-                    <div className="input"><input type="text" /></div>
+                    <div className="input">
+                    {loading ? (
+                                <div className="loader"></div>
+                    ): (
+                        <input type="text" defaultValue={locations[0]}/>
+                    )}
+                    </div>
                 </div>
                 <div className="location-container">
                     <div className="label">To:</div>
-                    <div className="input"><input type="text" /></div>
+                    <div className="input">
+                    {loading ? (
+                                <div className="loader"></div>
+                    ): (
+                        <input type="text" defaultValue={locations[1]}/>
+                    )}
+                    </div>
                 </div>
             </div>
             <div className="about-container">
@@ -114,7 +227,7 @@ const Eld = () => {
                 </div>
                 <div className="personal-info-container">
                     <div className="personnal-info-content">
-                        <div className="input"><input type="text" /></div>
+                        <div className="input"><input type="text" defaultValue={name}/></div>
                         <div className="label">Name of carrier or carriers</div>
                     </div>
                     <div className="personnal-info-content">
@@ -160,10 +273,11 @@ const Eld = () => {
                         {getData().off.map((data, i) => (
                             <div 
                                 key={i}
-                                className="line-part-data"
+                                className="line-part-data label"
                                 style={data}
-                                data={data}
-                            ></div>
+                            >
+                                  {data.text}
+                            </div>
                         ))}
                         </div>
                         {Array.from({ length: 24 }, (_, i) => (
@@ -173,7 +287,7 @@ const Eld = () => {
                                 <div className="quarter2"></div>
                             </div>
                         ))}
-                            <div className="total"><input type="text" /></div>
+                            <div className="total"><input type="text" value={(getTotalHours().off / 3600)}/></div>
                         </div>
                     </div>
                     <div className="line-content">
@@ -183,9 +297,11 @@ const Eld = () => {
                         {getData().s.map((data, i) => (
                             <div 
                                 key={i}
-                                className="line-part-data"
+                                className="line-part-data label"
                                 style={data}
-                            ></div>
+                            >
+                                {data.text}
+                            </div>
                         ))}
                         </div>
                         {Array.from({ length: 24 }, (_, i) => (
@@ -195,7 +311,7 @@ const Eld = () => {
                                 <div className="quarter2"></div>
                             </div>
                         ))}
-                            <div className="total"><input type="text" /></div>
+                            <div className="total"><input type="text" value={(getTotalHours().s / 3600)}/></div>
                         </div>
                     </div>
                     <div className="line-content">
@@ -217,7 +333,7 @@ const Eld = () => {
                                 <div className="quarter2"></div>
                             </div>
                         ))}
-                            <div className="total"><input type="text" /></div>
+                            <div className="total"><input type="text" value={(getTotalHours().d / 3600)}/></div>
                         </div>
                     </div>
                     <div className="line-content">
@@ -227,9 +343,11 @@ const Eld = () => {
                         {getData().on.map((data, i) => (
                             <div 
                                 key={i}
-                                className="line-part-data"
+                                className="line-part-data label"
                                 style={data}
-                            ></div>
+                            >
+                                {data.text}
+                            </div>
                         ))}
                         </div>
                         {Array.from({ length: 24 }, (_, i) => (
@@ -239,11 +357,11 @@ const Eld = () => {
                                 <div className="quarter2"></div>
                             </div>
                         ))}
-                            <div className="total"><input type="text" /></div>
+                            <div className="total"><input type="text" value={(getTotalHours().on / 3600)}/></div>
                         </div>
                     </div>
                     <div className="total-hours">
-                        <input type="text" />
+                        <input type="text" value={((getTotalHours().off + getTotalHours().on + getTotalHours().s + getTotalHours().d) / 3600)}/>
                     </div>
                 </div>
             </div>

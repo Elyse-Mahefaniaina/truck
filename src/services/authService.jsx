@@ -7,10 +7,11 @@ export const login = async (email, password) => {
     const data= { email: email, password: password }
     const response = await axios.post(API_URL, data);
     
-    const { accessToken } = response.data;
+    const { accessToken, name } = response.data;
     
     sessionStorage.setItem('accessToken', accessToken);
-    window.location.href = "/trip";
+    sessionStorage.setItem('userName', name)
+
   } catch (error) {
     throw new Error(error);
   }

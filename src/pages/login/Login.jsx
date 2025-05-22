@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 import{ useAuth } from "../../hooks/useAuth"
 import { User, Key } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import "./Login.scss";
 
 const Login = () => {
-    const { login, isLoading, error } = useAuth();
+    const { login, isLoading } = useAuth();
     const [email, setEmail] = useState("email@email.com"); 
     const [password, setPassword] = useState("123456"); 
+    const navigate = useNavigate();
 
     const submitForm = async () => {
         await login(email, password);
+        navigate("/trip");
     }
 
     return (
